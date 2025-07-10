@@ -54,7 +54,7 @@ function App() {
           className="text-xl border-dashed border p-4 text-center active:bg-gray-100 w-full"
           onClick={() => addComponent()}
         >
-          Add More
+          {states.length > 0 ? 'Add More': 'Add Counter'}
         </button>
       </div>
 
