@@ -1,53 +1,67 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { calculateTotalFry } from "../lib/utils";
+import CounterItem from "./CounterItem";
 
-// Remove the arguments once you figure out how to properly implement this
-export default function Counter({
-  handler,
-  idx,
-  count
-}: {
-  handler: (updater: (prev:number) => number) => void;
-  idx: number;
-  count: number
-}) {
-  // const [count, setCount] = useState(0);
+function Counter() {
+  const [states, setStates] = useState<
+    { idx: number; count: number; text: string }[]
+  >([]);
 
-  const handleClick = useCallback((increase: number) => {
-    // setCount((prev) => {
-    //   if (prev + increase < 0) {
-    //     return 0;
-    //   } else {
-    //     return prev + increase;
-    //   }
-    // });
-    handler((prev) => {
-      const next = prev + increase;
-      return next < 0 ? 0 : next
-    });
+  const [totalCount, setTotalCount] = useState(0);
+
+  const addComponent = useCallback(() => {
+    setStates((prev) => [
+      ...prev,
+      {
+        idx: prev.length,
+        count: 0,
+        text: (prev.length + 1) as unknown as string,
+      },
+    ]);
+  }, []);
+
+  useEffect(() => {
+    setTotalCount(calculateTotalFry(states.map(({idx, count})=> ({idx, count}))))
+  }, [states])
+
+  const updateCount = useCallback((idx: number) => {
+    return (updateFn: (prev: number) => number) => {
+      setStates((prev) =>
+        prev.map((item) =>
+          item.idx === idx ? { ...item, count: updateFn(item.count) } : item
+        )
+      );
+    };
   }, []);
 
   return (
-    <div className="flex items-center py-4 gap-4">
-      <span className="py-2 px-4 text-2xl bg-cyan-400 text-gray-900 font-medium">
-        {idx + 1}
-      </span>
+    <>
+      {/* body */}
+      <div className="px-4 py-4 max-h-[calc(100vh-96px)] overflow-scroll scrollbar-none">
+        {states.map((item) => (
+          <CounterItem
+            key={item.idx}
+            handler={updateCount(item.idx)}
+            idx={item.idx}
+            count={item.count}
+          />
+        ))}
 
-      <button
-        className="py-2 px-4 text-2xl bg-lime-400 text-gray-900 font-medium active:bg-lime-500"
-        onClick={() => handleClick(1)}
-      >
-        +
-      </button>
-      <span className="py-2 px-4 text-2xl flex-1 text-gray-900 text-center font-medium border border-dashed">
-        {count}
-      </span>
-      <button
-        className="py-2 px-4 text-2xl bg-rose-400 text-gray-900 font-medium active:bg-rose-500 disabled:bg-rose-100"
-        disabled={count === 0}
-        onClick={() => handleClick(-1)}
-      >
-        -
-      </button>
-    </div>
+        {/* Add more */}
+        <button
+          className="text-xl border-dashed border p-4 text-center active:bg-gray-100 w-full"
+          onClick={() => addComponent()}
+        >
+          {states.length > 0 ? 'Add More': 'Add Counter'}
+        </button>
+      </div>
+
+      {/* bottom nav */}
+      <div className="absolute bottom-0 w-full h-12 bg-lime-600 flex items-center justify-center text-white text-xl">
+        {totalCount}
+      </div>
+    </>
   );
 }
+
+export default Counter;
