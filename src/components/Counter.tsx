@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { calculateTotalFry } from "../lib/utils";
 import CounterItem from "./CounterItem";
-import { getCountsById, type Count } from "../lib/db";
+import {
+  createNote,
+  getCountsById,
+  getNoteById,
+  saveCount,
+  type Count,
+} from "../lib/db";
 
 function Counter() {
   const [states, setStates] = useState<Count[]>([]);
@@ -9,41 +15,63 @@ function Counter() {
 
   const [noteId, setNoteId] = useState(0);
 
+  // for the button to add more counter
+  const [isAdding, setIsAdding] = useState(false);
+
+  // const [error, setError] = useState(false);
+
   // Get items from db if noteId exists
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const create = params.get("create");
     const raw = params.get("noteId");
-    const parsed = Number(raw);
+    let parsed = Number(raw);
 
-    if (!isNaN(parsed)) {
-      console.log("Parsed noteId:", parsed);
-      setNoteId(parsed);
-
+    if (create === "true") {
+      // Only create a new note if explicitly requested
       (async () => {
-        const items = await getCountsById(parsed);
-        console.log(items);
-        setStates(items);
+        const newNoteId = await createNote();
+        if (newNoteId) {
+          setNoteId(newNoteId);
+        }
       })();
-    } else {
-      console.warn("Invalid noteId in URL:", raw);
-      // Handle invalid noteId (e.g., redirect or show modal)
+    } else if (!isNaN(parsed)) {
+      (async () => {
+        const note = await getNoteById(parsed);
+        if (note) {
+          const items = await getCountsById(parsed);
+          setStates(items);
+          setNoteId(parsed);
+        }
+      })();
     }
   }, []);
 
   const addComponent = useCallback(() => {
     // Create a noteId from the store
+    setIsAdding(true);
 
-    setStates((prev) => [
-      ...prev,
-      {
-        idx: prev.length,
-        count: 0,
-        text: (prev.length + 1) as unknown as string,
-        noteId: 0,
-        id: 0,
-      },
-    ]);
-  }, [noteId]);
+    // Save count
+    (async () => {
+      const countId = await saveCount(states.length + 1, 0, noteId);
+      if (countId) {
+        setStates((prev) => [
+          ...prev,
+          {
+            idx: prev.length + 1,
+            count: 0,
+            text: (prev.length + 1) as unknown as string,
+            noteId: noteId,
+            id: countId,
+          },
+        ]);
+
+        setIsAdding(false);
+      } else {
+        console.error("There's no count id for some reason");
+      }
+    })();
+  }, [noteId, states]);
 
   useEffect(() => {
     setTotalCount(
@@ -63,30 +91,38 @@ function Counter() {
 
   return (
     <>
-      {/* body */}
-      <div className="px-4 py-4 max-h-[calc(100vh-96px)] overflow-scroll scrollbar-none">
-        {states.map((item) => (
-          <CounterItem
-            key={item.idx}
-            handler={updateCount(item.idx)}
-            idx={item.idx}
-            count={item.count}
-          />
-        ))}
+      {noteId ? (
+        <>
+          <div className="px-4 py-4 max-h-[calc(100vh-96px)] overflow-scroll scrollbar-none">
+            {states.map((item) => (
+              <CounterItem
+                key={item.id}
+                handler={updateCount(item.idx)}
+                idx={item.idx}
+                count={item.count}
+              />
+            ))}
 
-        {/* Add more */}
-        <button
-          className="text-xl border-dashed border p-4 text-center active:bg-gray-100 w-full"
-          onClick={() => addComponent()}
-        >
-          {states.length > 0 ? "Add More" : "Add Counter"}
-        </button>
-      </div>
+            <button
+              className="text-xl border-dashed border p-4 text-center active:bg-gray-100 w-full disabled:bg-gray-100"
+              disabled={isAdding}
+              onClick={() => addComponent()}
+            >
+              {isAdding
+                ? "Adding. Please wait."
+                : states.length > 0
+                ? "Add More"
+                : "Add Counter"}
+            </button>
+          </div>
 
-      {/* bottom nav */}
-      <div className="absolute bottom-0 w-full h-12 bg-lime-600 flex items-center justify-center text-white text-xl">
-        {totalCount}
-      </div>
+          <div className="absolute bottom-0 w-full h-12 bg-lime-600 flex items-center justify-center text-white text-xl">
+            {totalCount}
+          </div>
+        </>
+      ) : (
+        "Loading"
+      )}
     </>
   );
 }

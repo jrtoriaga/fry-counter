@@ -29,7 +29,7 @@ export default function CounterItem({
   return (
     <div className="flex items-center py-4 gap-4">
       <span className="py-2 px-4 text-2xl bg-cyan-400 text-gray-900 font-medium">
-        {idx + 1}
+        {idx}
       </span>
 
       <button

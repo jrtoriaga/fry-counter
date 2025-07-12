@@ -3,12 +3,12 @@ import type { IDBPDatabase, DBSchema } from "idb";
 
 export type Note = {
   seller?: string;
-  id: number;
+  id?: number;
 };
 
 export type Count = {
   noteId: number;
-  id: number;
+  id?: number;
   idx: number;
   count: number;
 };
@@ -54,8 +54,42 @@ export async function getCountsById(noteId: number) {
     return items;
   } catch (err) {
 
-    console.log(err);
+    console.error(err);
   }
 
   return [];
+}
+
+export async function getNoteById(noteId: number){
+  try {
+    const db = await getDB();
+    const note = await db.get("notes", noteId)
+    return note;
+
+  } catch(err){
+    console.error(err)
+  }
+}
+
+
+export async function createNote(seller?: string){
+    try {
+    const db = await getDB();
+    const noteId = await db.put("notes", {seller})
+    return noteId;
+
+  } catch(err){
+    console.error(err)
+  }
+}
+
+export async function saveCount(idx: number, count: number, noteId: number){
+  try {
+
+    const db = await getDB();
+    const countId = await db.put("counts", {idx, count, noteId})
+    return countId
+  } catch (err){
+    console.log(err)
+  }
 }
