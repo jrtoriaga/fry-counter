@@ -8,7 +8,7 @@ import {
   type Note,
   saveNote,
 } from "../lib/db";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 function Counter() {
   const [counts, setCounts] = useState<Count[]>([]);
@@ -17,14 +17,9 @@ function Counter() {
   const [note, setNote] = useState<Note>({});
 
   // for the button to add more counter
-  const [isAdding, setIsAdding] = useState(false);
 
   // Saving
   const [isSaving, setSaving] = useState(false);
-
-  // For url changing
-  const location = useLocation();
-  const navigate = useNavigate();
 
   // const [error, setError] = useState(false);
 
@@ -76,8 +71,6 @@ function Counter() {
       );
     };
   }, []);
-
-  // TODO Create overall save button
 
   const save = useCallback(async () => {
     if (!note || !counts) {
@@ -183,14 +176,9 @@ function Counter() {
 
             <button
               className="text-xl border-dashed border p-4 text-center active:bg-gray-100 w-full disabled:bg-gray-100 mb-4"
-              disabled={isAdding}
               onClick={() => addComponent()}
             >
-              {isAdding
-                ? "Adding. Please wait."
-                : counts.length > 0
-                ? "Add More"
-                : "Add Counter"}
+              {counts.length > 0 ? "Add More" : "Add Counter"}
             </button>
           </div>
 

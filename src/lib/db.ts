@@ -78,9 +78,9 @@ export async function updateOrInsertNote(note: Note) {
     const db = await getDB();
     const noteId = await db.put("notes", note);
 
-    const noteWithId = await db.get("notes", noteId)
+    const noteWithId = await db.get("notes", noteId);
 
-    return noteWithId
+    return noteWithId;
   } catch (err) {
     console.error(err);
   }
@@ -90,9 +90,9 @@ export async function updateOrInsertCount(count: Count) {
   try {
     const db = await getDB();
     const countId = await db.put("counts", count);
-  
-    const countWithId = await db.get("counts", countId)
-    return countWithId
+
+    const countWithId = await db.get("counts", countId);
+    return countWithId;
   } catch (err) {
     console.log(err);
   }
@@ -103,29 +103,32 @@ export async function saveNote(note: Note, counts: Count[]) {
     const db = await getDB();
 
     // Get a note id
-    const cleanedNote = Object.fromEntries(Object.entries(note).filter(([_, v]) => v))
-    const id = await db.put("notes", cleanedNote)
+    const cleanedNote = Object.fromEntries(
+      Object.entries(note).filter(([_, v]) => v)
+    );
+    const id = await db.put("notes", cleanedNote);
 
-    if (id){
+    if (id) {
       // Save the counts
+      const updatedCounts = await Promise.all(
+        counts.map((count) => {
+          if (count.id === 0) delete count.id;
+          return updateOrInsertCount({ ...count, noteId: id });
+        })
+      );
 
-      // Filter
-      counts.forEach((count) => {
-        if (count.id === 0){
-          delete count.id
-        }
-      })
-
-      counts.forEach((count) => {
-        const newCount = updateOrInsertCount({...count, noteId: id})
-        Object.assign(count, newCount)
-
-      })
+      return { note: { ...note, id }, counts: updatedCounts };
     }
+  } catch (err) {
+    console.log(err);
+  }
+}
 
-    return {note: {...note, id: id}, counts: counts}
-
-
+export async function getAllNotes() {
+  try {
+    const db = await getDB();
+    const notes = await db.getAll("notes");
+    return notes;
   } catch (err) {
     console.log(err);
   }

@@ -1,42 +1,45 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getDB } from "../lib/db";
+import { getAllNotes, type Note } from "../lib/db";
 
 export default function AllNotes() {
-  const [items, setItems] = useState<any>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
 
   useEffect(() => {
-    const fetchItems = async () => {
-      const db = await getDB();
-      const items = await db.getAll("notes");
-      setItems(items);
-    };
-
-    fetchItems();
+    (async () => {
+      const notes = await getAllNotes();
+      if (notes) {
+        setNotes(notes);
+      }
+    })();
   }, []);
-
-  useEffect(() => {
-    console.log(items);
-  }, [items]);
 
   return (
     <>
       {" "}
-      <nav className="w-full bg-lime-600 flex items-center px-4 text-white h-[66px]"></nav>
+      <nav className="w-full bg-lime-600 flex items-center justify-between text-2xl px-4 text-white h-[66px]">
+        JRT
+      </nav>
       <div className="p-4 flex gap-4 flex-col">
         {/* List of notes */}
-        <div className="p-4 border rounded-md border-gray-300 text-gray-700">
-          Note 1
-        </div>
 
-        <div className="p-4 border rounded-md border-gray-300 text-gray-700">
-          Note 1
-        </div>
+        {notes && notes.map((note) => (
+          <Link to={`/counter?noteId=${note.id}`} key={note.id}>
+            <div className="p-4 border rounded-md border-gray-300 text-gray-700">
+              Note {note.id}
+            </div>
+          </Link>
+        ))}
 
-        {/* Fab */}
-        <div className="fixed bottom-20 right-8 z-10">
-          <Link to="/counter">Counter</Link>
-        </div>
+        {notes.length === 0 && (<div className="text-xl my-12 text-gray-700">No notes found.</div>)}
+
+        {/* Create new note button */}
+        <Link
+          to="/counter"
+          className="bg-lime-500 p-4 gap-4 text-white active:bg-lime-600 flex items-center justify-center"
+        >
+          Create a Note
+        </Link>
       </div>
     </>
   );
