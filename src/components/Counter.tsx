@@ -2,21 +2,31 @@ import { useCallback, useEffect, useState } from "react";
 import { calculateTotalFry } from "../lib/utils";
 import CounterItem from "./CounterItem";
 import {
-  createNote,
+  updateOrInsertNote,
   getCountsById,
   getNoteById,
-  saveCount,
+  updateOrInsertCount,
   type Count,
+  type Note,
+  saveNote,
 } from "../lib/db";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function Counter() {
-  const [states, setStates] = useState<Count[]>([]);
+  const [counts, setCounts] = useState<Count[]>([]);
   const [totalCount, setTotalCount] = useState(0);
 
-  const [noteId, setNoteId] = useState(0);
+  const [note, setNote] = useState<Note>();
 
   // for the button to add more counter
   const [isAdding, setIsAdding] = useState(false);
+
+  // Saving
+  const [isSaving, setSaving] = useState(false);
+
+  // For url changing
+  const location = useLocation()
+  const navigate = useNavigate()
 
   // const [error, setError] = useState(false);
 
@@ -30,9 +40,17 @@ function Counter() {
     if (create === "true") {
       // Only create a new note if explicitly requested
       (async () => {
-        const newNoteId = await createNote();
-        if (newNoteId) {
-          setNoteId(newNoteId);
+        const newNoteWithId = await updateOrInsertNote({});
+        if (newNoteWithId) {
+          setNote(newNoteWithId);
+
+          // Also change the url
+          navigate({
+            pathname: location.pathname,
+            search: `noteId=${newNoteWithId.id}`
+          }, {replace: true})
+
+
         }
       })();
     } else if (!isNaN(parsed)) {
@@ -40,8 +58,8 @@ function Counter() {
         const note = await getNoteById(parsed);
         if (note) {
           const items = await getCountsById(parsed);
-          setStates(items);
-          setNoteId(parsed);
+          setCounts(items);
+          setNote(note);
         }
       })();
     }
@@ -49,39 +67,32 @@ function Counter() {
 
   const addComponent = useCallback(() => {
     // Create a noteId from the store
-    setIsAdding(true);
 
     // Save count
-    (async () => {
-      const countId = await saveCount(states.length + 1, 0, noteId);
-      if (countId) {
-        setStates((prev) => [
-          ...prev,
-          {
-            idx: prev.length + 1,
-            count: 0,
-            text: (prev.length + 1) as unknown as string,
-            noteId: noteId,
-            id: countId,
-          },
-        ]);
-
-        setIsAdding(false);
-      } else {
-        console.error("There's no count id for some reason");
-      }
-    })();
-  }, [noteId, states]);
+    if (note?.id) {
+      setCounts((prev) => [
+        ...prev,
+        {
+          idx: prev.length + 1,
+          count: 0,
+          noteId: note?.id!,
+          id: 0,
+        },
+      ]);
+    } else {
+      console.error("No note exists");
+    }
+  }, [counts, note]);
 
   useEffect(() => {
     setTotalCount(
-      calculateTotalFry(states.map(({ idx, count }) => ({ idx, count })))
+      calculateTotalFry(counts.map(({ idx, count }) => ({ idx, count })))
     );
-  }, [states]);
+  }, [counts]);
 
   const updateCount = useCallback((idx: number) => {
     return (updateFn: (prev: number) => number) => {
-      setStates((prev) =>
+      setCounts((prev) =>
         prev.map((item) =>
           item.idx === idx ? { ...item, count: updateFn(item.count) } : item
         )
@@ -89,14 +100,36 @@ function Counter() {
     };
   }, []);
 
+  // TODO Create overall save button
+
+const save = useCallback(async () => {
+  if (!note || !counts) {
+    console.error("Can't save.");
+    return;
+  }
+
+  setSaving(true);
+
+  const result = await saveNote(note, counts);
+  if (result) {
+    const { note: newNote, counts: newCounts } = result;
+    setNote(newNote);
+    setCounts(newCounts);
+    console.log("Successfully saved");
+  }
+
+  setSaving(false);
+}, [note, counts]);
+
+
   return (
     <>
-      {noteId ? (
+      {note ? (
         <>
           <div className="px-4 py-4 max-h-[calc(100vh-96px)] overflow-scroll scrollbar-none">
-            {states.map((item) => (
+            {counts.map((item) => (
               <CounterItem
-                key={item.id}
+                key={item.idx}
                 handler={updateCount(item.idx)}
                 idx={item.idx}
                 count={item.count}
@@ -110,7 +143,7 @@ function Counter() {
             >
               {isAdding
                 ? "Adding. Please wait."
-                : states.length > 0
+                : counts.length > 0
                 ? "Add More"
                 : "Add Counter"}
             </button>
@@ -123,6 +156,10 @@ function Counter() {
       ) : (
         "Loading"
       )}
+
+      <div className="fixed bottom-4 right-4">
+        <button onClick={save}>Save</button>
+      </div>
     </>
   );
 }
