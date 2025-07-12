@@ -2,21 +2,19 @@ import { useCallback, useEffect, useState } from "react";
 import { calculateTotalFry } from "../lib/utils";
 import CounterItem from "./CounterItem";
 import {
-  updateOrInsertNote,
   getCountsById,
   getNoteById,
-  updateOrInsertCount,
   type Count,
   type Note,
   saveNote,
 } from "../lib/db";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 function Counter() {
   const [counts, setCounts] = useState<Count[]>([]);
   const [totalCount, setTotalCount] = useState(0);
 
-  const [note, setNote] = useState<Note>();
+  const [note, setNote] = useState<Note>({});
 
   // for the button to add more counter
   const [isAdding, setIsAdding] = useState(false);
@@ -25,35 +23,18 @@ function Counter() {
   const [isSaving, setSaving] = useState(false);
 
   // For url changing
-  const location = useLocation()
-  const navigate = useNavigate()
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // const [error, setError] = useState(false);
 
   // Get items from db if noteId exists
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const create = params.get("create");
     const raw = params.get("noteId");
     let parsed = Number(raw);
 
-    if (create === "true") {
-      // Only create a new note if explicitly requested
-      (async () => {
-        const newNoteWithId = await updateOrInsertNote({});
-        if (newNoteWithId) {
-          setNote(newNoteWithId);
-
-          // Also change the url
-          navigate({
-            pathname: location.pathname,
-            search: `noteId=${newNoteWithId.id}`
-          }, {replace: true})
-
-
-        }
-      })();
-    } else if (!isNaN(parsed)) {
+    if (!isNaN(parsed)) {
       (async () => {
         const note = await getNoteById(parsed);
         if (note) {
@@ -69,19 +50,15 @@ function Counter() {
     // Create a noteId from the store
 
     // Save count
-    if (note?.id) {
-      setCounts((prev) => [
-        ...prev,
-        {
-          idx: prev.length + 1,
-          count: 0,
-          noteId: note?.id!,
-          id: 0,
-        },
-      ]);
-    } else {
-      console.error("No note exists");
-    }
+    setCounts((prev) => [
+      ...prev,
+      {
+        idx: prev.length + 1,
+        count: 0,
+        noteId: note?.id || 0,
+        id: 0,
+      },
+    ]);
   }, [counts, note]);
 
   useEffect(() => {
@@ -102,28 +79,32 @@ function Counter() {
 
   // TODO Create overall save button
 
-const save = useCallback(async () => {
-  if (!note || !counts) {
-    console.error("Can't save.");
-    return;
-  }
+  const save = useCallback(async () => {
+    if (!note || !counts) {
+      console.error("Can't save.");
+      return;
+    }
 
-  setSaving(true);
+    setSaving(true);
 
-  const result = await saveNote(note, counts);
-  if (result) {
-    const { note: newNote, counts: newCounts } = result;
-    setNote(newNote);
-    setCounts(newCounts);
-    console.log("Successfully saved");
-  }
+    const result = await saveNote(note, counts);
+    if (result) {
+      const { note: newNote, counts: newCounts } = result;
+      setNote(newNote);
+      setCounts(newCounts);
+      console.log("Successfully saved");
+    }
 
-  setSaving(false);
-}, [note, counts]);
-
+    setSaving(false);
+  }, [note, counts]);
 
   return (
     <>
+      <nav className="w-full bg-lime-600 flex items-center px-4 text-white h-[66px]">
+        <Link className="border border-white rounded-md p-1 px-2" to="/">
+          Home
+        </Link>
+      </nav>
       {note ? (
         <>
           <div className="px-4 py-4 max-h-[calc(100vh-96px)] overflow-scroll scrollbar-none">
