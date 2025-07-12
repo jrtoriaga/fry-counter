@@ -123,7 +123,7 @@ export async function saveNote(note: Note, counts: Count[]) {
       })
     }
 
-    return {note: {...note, noteId: id}, counts: counts}
+    return {note: {...note, id: id}, counts: counts}
 
 
   } catch (err) {
