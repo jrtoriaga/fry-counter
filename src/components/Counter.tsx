@@ -6,9 +6,9 @@ import {
   getNoteById,
   type Count,
   type Note,
-  saveNote,
+  saveNoteWithCounts,
 } from "../lib/db";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 function Counter() {
   const [counts, setCounts] = useState<Count[]>([]);
@@ -80,15 +80,26 @@ function Counter() {
 
     setSaving(true);
 
-    const result = await saveNote(note, counts);
+    const result = await saveNoteWithCounts(note, counts);
     if (result) {
       const { note: newNote, counts: newCounts } = result;
-      setNote(newNote);
-      setCounts(newCounts);
+      if (newNote) setNote(newNote);
+      if (newCounts)
+        setCounts(newCounts.filter((c): c is Count => c !== undefined));
       console.log("Successfully saved");
     }
 
     setSaving(false);
+  }, [note, counts]);
+
+  const navigate = useNavigate();
+
+  const edit = useCallback(async () => {
+    // First save
+      
+    await save();
+    navigate(`/edit?noteId=${note.id}`);
+
   }, [note, counts]);
 
   return (
@@ -113,19 +124,26 @@ function Counter() {
           </Link>
         </div>
 
-        <div className="w-1/3 flex items-start gap-2 justify-center">
-          <span className=" text-center">
-            {note.id ? `Note ${note.id}` : "Unsaved Note"}
+        <div className="w-1/3 flex items-center gap-2 justify-center">
+          <span className=" text-center shrink truncate max-w-full">
+            {note
+              ? note.title
+                ? note.title
+                : note.id
+                ? `Note ${note.id}`
+                : "Unsaved Note"
+              : "Unsaved Note"}
           </span>
 
           {note.id && (
             <svg
+              onClick={edit}
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth="1.5"
               stroke="currentColor"
-              className="size-5"
+              className="size-5 shrink-0 active:text-lime-700"
             >
               <path
                 strokeLinecap="round"

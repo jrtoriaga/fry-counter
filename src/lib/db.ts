@@ -4,6 +4,7 @@ import type { IDBPDatabase, DBSchema } from "idb";
 export type Note = {
   seller?: string;
   id?: number;
+  title?: string;
 };
 
 export type Count = {
@@ -98,7 +99,7 @@ export async function updateOrInsertCount(count: Count) {
   }
 }
 
-export async function saveNote(note: Note, counts: Count[]) {
+export async function saveNoteWithCounts(note: Note, counts: Count[]) {
   try {
     const db = await getDB();
 
@@ -108,7 +109,7 @@ export async function saveNote(note: Note, counts: Count[]) {
     );
     const id = await db.put("notes", cleanedNote);
 
-    if (id) {
+    if (id && counts) {
       // Save the counts
       const updatedCounts = await Promise.all(
         counts.map((count) => {
@@ -119,6 +120,23 @@ export async function saveNote(note: Note, counts: Count[]) {
 
       return { note: { ...note, id }, counts: updatedCounts };
     }
+    return { ...note, id };
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+export async function saveNote(note: Note) {
+  try {
+    const db = await getDB();
+    // Get a note id
+    const cleanedNote = Object.fromEntries(
+      Object.entries(note).filter(([_, v]) => v)
+    );
+    const id = await db.put("notes", cleanedNote);
+
+    // WARN This assumes that we're saving the complete note so we no longer have to get the note from the db
+    return { ...note, id } as Note;
   } catch (err) {
     console.log(err);
   }
