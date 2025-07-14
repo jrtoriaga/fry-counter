@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { calculateTotalFry } from "../lib/utils";
 import CounterItem from "./CounterItem";
 import {
@@ -14,6 +14,9 @@ function Counter() {
   const [counts, setCounts] = useState<Count[]>([]);
   const [totalCount, setTotalCount] = useState(0);
 
+  // For popup
+  const [showPopup, setShowPopup] = useState(false);
+
   const [note, setNote] = useState<Note>({});
 
   // for the button to add more counter
@@ -22,6 +25,10 @@ function Counter() {
   const [isSaving, setSaving] = useState(false);
 
   // const [error, setError] = useState(false);
+
+  // These are for no duplicate saving
+  const lastSavedNoteRef = useRef<Note>({});
+  const lastSavedCountsRef = useRef<Count[]>([]);
 
   // Get items from db if noteId exists
   useEffect(() => {
@@ -36,6 +43,10 @@ function Counter() {
           const items = await getCountsById(parsed);
           setCounts(items);
           setNote(note);
+
+          // ✅ Set initial saved refs
+          lastSavedNoteRef.current = note;
+          lastSavedCountsRef.current = items;
         }
       })();
     }
@@ -72,9 +83,32 @@ function Counter() {
     };
   }, []);
 
+  useEffect(() => {
+    if (showPopup) {
+      const timer = setTimeout(() => setShowPopup(false), 3000);
+      return () => clearTimeout(timer); // cleanup
+    }
+  }, [showPopup]);
+
   const save = useCallback(async () => {
     if (!note || !counts) {
       console.error("Can't save.");
+      return;
+    }
+
+    // Compare current and last saved versions
+    const sameNote =
+      JSON.stringify(note) === JSON.stringify(lastSavedNoteRef.current);
+    const sameCounts =
+      JSON.stringify(counts) === JSON.stringify(lastSavedCountsRef.current);
+
+    console.log(
+      "Note changed:",
+      JSON.stringify(counts) !== JSON.stringify(lastSavedCountsRef.current)
+    );
+
+    if (sameNote && sameCounts) {
+      console.log("No changes, skipping save");
       return;
     }
 
@@ -83,10 +117,17 @@ function Counter() {
     const result = await saveNoteWithCounts(note, counts);
     if (result) {
       const { note: newNote, counts: newCounts } = result;
-      if (newNote) setNote(newNote);
-      if (newCounts)
-        setCounts(newCounts.filter((c): c is Count => c !== undefined));
+      if (newNote) {
+        setNote(newNote);
+        lastSavedNoteRef.current = newNote;
+      }
+      if (newCounts) {
+        const filtered = newCounts.filter((c): c is Count => c !== undefined);
+        setCounts(filtered);
+        lastSavedCountsRef.current = filtered;
+      }
       console.log("Successfully saved");
+      setShowPopup(true)
     }
 
     setSaving(false);
@@ -96,10 +137,9 @@ function Counter() {
 
   const edit = useCallback(async () => {
     // First save
-      
+
     await save();
     navigate(`/edit?noteId=${note.id}`);
-
   }, [note, counts]);
 
   return (
@@ -207,6 +247,15 @@ function Counter() {
       ) : (
         "Loading"
       )}
+
+      {/* Pop up */}
+      <div
+        className={`fixed left-1/2 bottom-16 duration-300 transition-opacity w-3/4  transform -translate-x-1/2 text-center py-2 text-gray-600 ease-in-out
+          ${showPopup ? " opacity-100" : "opacity-0"}
+          `}
+      >
+        Note has been saved.
+      </div>
     </>
   );
 }

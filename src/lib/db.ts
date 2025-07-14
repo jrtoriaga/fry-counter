@@ -151,3 +151,16 @@ export async function getAllNotes() {
     console.log(err);
   }
 }
+
+
+export async function deleteNoteById(noteId: number){
+  try {
+
+    const db = await getDB()
+
+    await db.delete("notes", noteId)
+  } catch (err){
+
+    console.log(err)
+  }
+}
