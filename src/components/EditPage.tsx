@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { deleteNoteById, getNoteById, saveNote, type Note } from "../lib/db";
 import { Link, useNavigate } from "react-router-dom";
+import { formatDate } from "../lib/utils";
 
 export default function EditPage() {
   const [title, setTitle] = useState<string>("");
@@ -66,6 +67,7 @@ export default function EditPage() {
     (async () => {
       saveNote(newNote).then((newNote) => {
         if (newNote) {
+          setNote(newNote)
           setShowPopup(true);
 
           setSaving(false);
@@ -197,14 +199,14 @@ export default function EditPage() {
         <div className=" flex justify-between">
           <span className="w-1/2">Created Date:</span>
 
-          <span className="w-1/2 text-end">Jan 21, 2025 6:04 PM</span>
+          <span className="w-1/2 text-end">{note.createdDate ? formatDate(note.createdDate): ''}</span>
         </div>
 
         {/* Modified Date */}
         <div className=" flex justify-between">
           <span className="w-1/2">Last Modified Date:</span>
 
-          <span className="w-1/2 text-end">Jan 21, 2025 6:04 PM</span>
+          <span className="w-1/2 text-end">{note.modifiedDate ? formatDate(note.modifiedDate): ''}</span>
         </div>
       </div>
 

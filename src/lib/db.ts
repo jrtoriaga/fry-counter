@@ -5,6 +5,8 @@ export type Note = {
   seller?: string;
   id?: number;
   title?: string;
+  createdDate?: string;
+  modifiedDate?: string;
 };
 
 export type Count = {
@@ -107,6 +109,11 @@ export async function saveNoteWithCounts(note: Note, counts: Count[]) {
     const cleanedNote = Object.fromEntries(
       Object.entries(note).filter(([_, v]) => v)
     );
+
+    if (!cleanedNote.createdDate) {
+      cleanedNote.createdDate = new Date().toISOString();
+      cleanedNote.modifiedDate = new Date().toISOString();
+    }
     const id = await db.put("notes", cleanedNote);
 
     if (id && counts) {
@@ -133,10 +140,18 @@ export async function saveNote(note: Note) {
     const cleanedNote = Object.fromEntries(
       Object.entries(note).filter(([_, v]) => v)
     );
-    const id = await db.put("notes", cleanedNote);
 
-    // WARN This assumes that we're saving the complete note so we no longer have to get the note from the db
-    return { ...note, id } as Note;
+    if (!cleanedNote.createdDate) {
+      cleanedNote.createdDate = new Date().toISOString();
+    }
+
+    const id = await db.put("notes", {
+      ...cleanedNote,
+      modifiedDate: new Date().toISOString(),
+    });
+    const newNote = await db.get("notes", id);
+
+    return newNote;
   } catch (err) {
     console.log(err);
   }
@@ -152,28 +167,32 @@ export async function getAllNotes() {
   }
 }
 
-
-export async function deleteNoteById(noteId: number){
+export async function deleteNoteById(noteId: number) {
   try {
+    const db = await getDB();
 
-    const db = await getDB()
+    await db.delete("notes", noteId);
 
-    await db.delete("notes", noteId)
-  } catch (err){
+    // Delete matching counts
+    const tx = db.transaction("counts", "readwrite");
+    const index = tx.store.index("by_noteId");
 
-    console.log(err)
+    for await (const cursor of index.iterate(noteId)) {
+      cursor.delete();
+    }
+
+    await tx.done;
+  } catch (err) {
+    console.log(err);
   }
 }
 
-
-export async function deleteCountById(countId: number){
+export async function deleteCountById(countId: number) {
   try {
+    const db = await getDB();
 
-    const db = await getDB()
-
-    await db.delete("counts", countId)
-  } catch (err){
-
-    console.log(err)
+    await db.delete("counts", countId);
+  } catch (err) {
+    console.log(err);
   }
 }

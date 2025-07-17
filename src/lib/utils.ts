@@ -11,3 +11,15 @@ export const calculateTotalFry = (counts: {idx: number, count:number}[]) => {
     })
     return total
 }
+
+export const formatDate = (isoString: string) => {
+  return new Date(isoString).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  });
+}
