@@ -164,3 +164,16 @@ export async function deleteNoteById(noteId: number){
     console.log(err)
   }
 }
+
+
+export async function deleteCountById(countId: number){
+  try {
+
+    const db = await getDB()
+
+    await db.delete("counts", countId)
+  } catch (err){
+
+    console.log(err)
+  }
+}

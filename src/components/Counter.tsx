@@ -7,6 +7,7 @@ import {
   type Count,
   type Note,
   saveNoteWithCounts,
+  deleteCountById,
 } from "../lib/db";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -52,20 +53,45 @@ function Counter() {
     }
   }, []);
 
-  const addComponent = useCallback(() => {
-    // Create a noteId from the store
+  // Deleted Counts
+  const deletedCounts = useRef<Count[]>([]);
 
-    // Save count
-    setCounts((prev) => [
-      ...prev,
-      {
-        idx: prev.length + 1,
-        count: 0,
-        noteId: note?.id || 0,
-        id: 0,
-      },
-    ]);
-  }, [counts, note]);
+  // TODO: Add logic to handler adding ones that are in the deletedCountsWithId
+  const addComponent = useCallback(() => {
+    console.log("Adding component")
+    if (deletedCounts.current.length !== 0) {
+      
+      const lastDeleted = deletedCounts.current.pop();
+      console.log(
+        "Adding previously deleted item with id: " + lastDeleted?.id
+      );
+      const count = 0;
+
+      if (lastDeleted) {
+        setCounts((prev) => [
+          ...prev,
+          {
+            ...lastDeleted,
+            count,
+          },
+        ]);
+      }
+      // Check deletedCountsWith Id if an item exists
+      // If it has an item, append the item back to counts
+      // Save count
+    } else {
+      console.log("Adding new item as usual")
+      setCounts((prev) => [
+        ...prev,
+        {
+          idx: prev.length + 1,
+          count: 0,
+          noteId: note?.id || 0,
+          id: 0,
+        },
+      ]);
+    }
+  }, [note, deletedCounts]);
 
   useEffect(() => {
     setTotalCount(
@@ -82,6 +108,23 @@ function Counter() {
       );
     };
   }, []);
+
+  // TODO: Add logic to handler ones already existing in the database
+  const lastItemHandler = useCallback(() => {
+
+
+    // Get the last item.
+    // If the last item has an ID, add to deletedCountsWithId
+
+    setCounts((prev) => {
+      const last = prev.at(-1);
+      if (last && !deletedCounts.current.includes(last) && last.id !== 0) {
+        console.log("Adding to deleted count " + last.id)
+        deletedCounts.current.push(last);
+      }
+      return prev.slice(0, -1);
+    });
+  }, [counts, deletedCounts]);
 
   useEffect(() => {
     if (showPopup) {
@@ -114,6 +157,13 @@ function Counter() {
 
     setSaving(true);
 
+    // Delete deleted counts before they get recollected by saveNoteWithCounts
+    if (deletedCounts.current.length !== 0){
+      await Promise.all(
+        deletedCounts.current.map((item) => deleteCountById(item.id!))
+      )
+    }
+
     const result = await saveNoteWithCounts(note, counts);
     if (result) {
       const { note: newNote, counts: newCounts } = result;
@@ -127,7 +177,7 @@ function Counter() {
         lastSavedCountsRef.current = filtered;
       }
       console.log("Successfully saved");
-      setShowPopup(true)
+      setShowPopup(true);
     }
 
     setSaving(false);
@@ -223,12 +273,15 @@ function Counter() {
       {note ? (
         <>
           <div className="px-4 py-4 max-h-[calc(100vh-96px)] overflow-scroll scrollbar-none">
-            {counts.map((item) => (
+            {counts.map((item, i) => (
               <CounterItem
                 key={item.idx}
                 handler={updateCount(item.idx)}
                 idx={item.idx}
                 count={item.count}
+                lastItemHandler={
+                  i === counts.length - 1 ? lastItemHandler : undefined
+                }
               />
             ))}
 
@@ -250,7 +303,7 @@ function Counter() {
 
       {/* Pop up */}
       <div
-        className={`fixed left-1/2 bottom-16 duration-300 transition-opacity w-3/4  transform -translate-x-1/2 text-center py-2 text-gray-600 ease-in-out
+        className={`fixed left-1/2 bottom-16 duration-300 transition-opacity w-3/4  pointer-events-none transform -translate-x-1/2 text-center py-2 text-gray-600 ease-in-out
           ${showPopup ? " opacity-100" : "opacity-0"}
           `}
       >

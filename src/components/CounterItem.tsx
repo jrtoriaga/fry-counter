@@ -4,11 +4,13 @@ import { useCallback } from "react";
 export default function CounterItem({
   handler,
   idx,
-  count
+  count,
+  lastItemHandler,
 }: {
-  handler: (updater: (prev:number) => number) => void;
+  handler: (updater: (prev: number) => number) => void;
   idx: number;
-  count: number
+  count: number;
+  lastItemHandler?: () => void;
 }) {
   // const [count, setCount] = useState(0);
 
@@ -22,15 +24,24 @@ export default function CounterItem({
     // });
     handler((prev) => {
       const next = prev + increase;
-      return next < 0 ? 0 : next
+      return next < 0 ? 0 : next;
     });
   }, []);
 
   return (
     <div className="flex items-center py-4 gap-4">
-      <span className="py-2 px-4 text-2xl bg-cyan-400 text-gray-900 font-medium">
+      <div className="py-2 px-4 text-2xl bg-cyan-400 text-gray-900 font-medium relative">
         {idx}
-      </span>
+
+        {lastItemHandler && (
+          <button
+            className="absolute -top-1 -right-1 bg-red-600 border-red-800 rounded-full text-xs text-white border px-1"
+            onClick={() => lastItemHandler()}
+          >
+            x
+          </button>
+        )}
+      </div>
 
       <button
         className="py-2 px-4 text-2xl bg-lime-400 text-gray-900 font-medium active:bg-lime-500"
