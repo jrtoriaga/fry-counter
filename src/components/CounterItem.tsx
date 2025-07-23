@@ -29,36 +29,50 @@ export default function CounterItem({
   }, []);
 
   return (
-    <div className="flex items-center py-4 gap-4">
-      <div className="py-2 px-4 text-2xl bg-cyan-400 text-gray-900 font-medium relative">
+    <div className="flex items-center gap-4 max-h-[52px]">
+      <div className="rounded-full text-xl aspect-square bg-white/80 font-medium h-[48px] min-w-[48px] flex items-center justify-center">
         {idx}
 
-        {lastItemHandler && (
+        {/* {lastItemHandler && (
           <button
             className="absolute -top-1 -right-1 bg-red-600 border-red-800 rounded-full text-xs text-white border px-1"
             onClick={() => lastItemHandler()}
           >
             x
           </button>
-        )}
+        )} */}
       </div>
 
-      <button
-        className="py-2 px-4 text-2xl bg-lime-400 text-gray-900 font-medium active:bg-lime-500"
-        onClick={() => handleClick(1)}
-      >
-        +
-      </button>
-      <span className="py-2 px-4 text-2xl flex-1 text-gray-900 text-center font-medium border border-dashed">
-        {count}
-      </span>
-      <button
-        className="py-2 px-4 text-2xl bg-rose-400 text-gray-900 font-medium active:bg-rose-500 disabled:bg-rose-100"
-        disabled={count === 0}
-        onClick={() => handleClick(-1)}
-      >
-        -
-      </button>
+      <div className="flex items-center w-full justify-between bg-white/80 rounded-2xl py-1 px-3">
+        <button
+          className="rounded-full aspect-square w-[40px] text-white bg-blue-500 font-medium active:bg-blue-600"
+          onClick={() => handleClick(1)}
+        >
+          +
+        </button>
+        <span className="py-2 flex-grow px-4 text-xl flex-1 text-gray-900 text-center font-medium">
+          <span className="relative">
+          {count}
+
+          {lastItemHandler && (
+            <button
+              className="absolute -top-2 left-4 bg-red-500 rounded-full text-xs text-white border px-1"
+              onClick={() => lastItemHandler()}
+            >
+              x
+            </button>
+        )}
+          </span>
+
+        </span>
+        <button
+          className="rounded-full aspect-square w-[40px] text-2xl text-white bg-red-500 font-medium active:bg-red-600 disabled:bg-red-300"
+          disabled={count === 0}
+          onClick={() => handleClick(-1)}
+        >
+          -
+        </button>
+      </div>
     </div>
   );
 }

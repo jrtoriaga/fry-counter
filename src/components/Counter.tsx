@@ -9,14 +9,22 @@ import {
   saveNoteWithCounts,
   deleteCountById,
 } from "../lib/db";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+
+import saveSVG from "../assets/save.svg";
 
 function Counter() {
   const [counts, setCounts] = useState<Count[]>([]);
   const [totalCount, setTotalCount] = useState(0);
 
   // For popup
-  const [showPopup, setShowPopup] = useState(false);
+  const [popUpText, setPopUpText] = useState("");
+  const [isPopupShowing, setShowPopup] = useState(false);
+
+  const showPopUp = useCallback((text: string) => {
+    setPopUpText(text);
+    setShowPopup(true);
+  }, []);
 
   const [note, setNote] = useState<Note>({});
 
@@ -51,6 +59,16 @@ function Counter() {
         }
       })();
     }
+
+    if (raw === null) {
+      // If no notes exist, create a single count
+      if (counts.length <= 0) {
+        console.log("Adding first counter");
+        setCounts((prev) =>
+          prev.length ? prev : [...prev, { id: 0, idx: 1, noteId: 0, count: 0 }]
+        );
+      }
+    }
   }, []);
 
   // Deleted Counts
@@ -58,13 +76,10 @@ function Counter() {
 
   // TODO: Add logic to handler adding ones that are in the deletedCountsWithId
   const addComponent = useCallback(() => {
-    console.log("Adding component")
+    console.log("Adding component");
     if (deletedCounts.current.length !== 0) {
-      
       const lastDeleted = deletedCounts.current.pop();
-      console.log(
-        "Adding previously deleted item with id: " + lastDeleted?.id
-      );
+      console.log("Adding previously deleted item with id: " + lastDeleted?.id);
       const count = 0;
 
       if (lastDeleted) {
@@ -80,7 +95,7 @@ function Counter() {
       // If it has an item, append the item back to counts
       // Save count
     } else {
-      console.log("Adding new item as usual")
+      console.log("Adding new item as usual");
       setCounts((prev) => [
         ...prev,
         {
@@ -111,28 +126,28 @@ function Counter() {
 
   // TODO: Add logic to handler ones already existing in the database
   const lastItemHandler = useCallback(() => {
-
-
     // Get the last item.
     // If the last item has an ID, add to deletedCountsWithId
 
     setCounts((prev) => {
       const last = prev.at(-1);
       if (last && !deletedCounts.current.includes(last) && last.id !== 0) {
-        console.log("Adding to deleted count " + last.id)
+        console.log("Adding to deleted count " + last.id);
         deletedCounts.current.push(last);
       }
       return prev.slice(0, -1);
     });
   }, [counts, deletedCounts]);
 
+  // Show pop up logic
   useEffect(() => {
-    if (showPopup) {
+    if (isPopupShowing) {
       const timer = setTimeout(() => setShowPopup(false), 3000);
       return () => clearTimeout(timer); // cleanup
     }
-  }, [showPopup]);
+  }, [isPopupShowing]);
 
+  // Saving note logic
   const save = useCallback(async () => {
     if (!note || !counts) {
       console.error("Can't save.");
@@ -152,16 +167,18 @@ function Counter() {
 
     if (sameNote && sameCounts) {
       console.log("No changes, skipping save");
-      return;
+      showPopUp("No changes detected.");
+      // Because this function is needed to return an id and the note exits
+      return note.id;
     }
 
     setSaving(true);
 
     // Delete deleted counts before they get recollected by saveNoteWithCounts
-    if (deletedCounts.current.length !== 0){
+    if (deletedCounts.current.length !== 0) {
       await Promise.all(
         deletedCounts.current.map((item) => deleteCountById(item.id!))
-      )
+      );
     }
 
     const result = await saveNoteWithCounts(note, counts);
@@ -177,125 +194,97 @@ function Counter() {
         lastSavedCountsRef.current = filtered;
       }
       console.log("Successfully saved");
-      setShowPopup(true);
+      showPopUp("Count has been saved.");
     }
 
     setSaving(false);
+    return result?.note?.id
   }, [note, counts]);
 
   const navigate = useNavigate();
 
   const edit = useCallback(async () => {
     // First save
-
-    await save();
-    navigate(`/edit?noteId=${note.id}`);
+    const noteId = await save();
+    if (noteId) navigate(`/edit?noteId=${noteId}`);
   }, [note, counts]);
 
   return (
     <>
-      <nav className="w-full bg-lime-600 flex items-center px-4 text-white h-[66px]">
-        <div className="w-1/3">
-          <Link to="/">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="size-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-              />
-            </svg>
-          </Link>
-        </div>
-
-        <div className="w-1/3 flex items-center gap-2 justify-center">
-          <span className=" text-center shrink truncate max-w-full">
-            {note
-              ? note.title
-                ? note.title
-                : note.id
-                ? `Note ${note.id}`
-                : "Unsaved Note"
-              : "Unsaved Note"}
-          </span>
-
-          {note.id && (
-            <svg
-              onClick={edit}
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="size-5 shrink-0 active:text-lime-700"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-              />
-            </svg>
-          )}
-        </div>
-
-        {/* Save cog and settings cog */}
-        <div className="w-1/3 flex justify-end relative">
-          <button
-            className=" active:text-lime-700 disabled:text-lime-700"
-            disabled={isSaving}
-            onClick={save}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="size-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6A2.25 2.25 0 0 1 6 3.75h1.5m9 0h-9"
-              />
-            </svg>
-          </button>
-
-          {isSaving && <span className="absolute right-8">Saving</span>}
-        </div>
-      </nav>
       {note ? (
         <>
-          <div className="px-4 py-4 max-h-[calc(100vh-96px)] overflow-scroll scrollbar-none">
-            {counts.map((item, i) => (
-              <CounterItem
-                key={item.idx}
-                handler={updateCount(item.idx)}
-                idx={item.idx}
-                count={item.count}
-                lastItemHandler={
-                  i === counts.length - 1 ? lastItemHandler : undefined
-                }
-              />
-            ))}
+          <div className="flex gap-4 flex-col mt-4">
+            {/* Note title */}
+            <div className="flex items-center  justify-between bg-white/80 px-4 min-h-[54px] rounded-2xl font-medium">
+              <span className="flex-grow select-none max-w-full truncate">
+                {note.title || "Untitled Count"}
+              </span>
+
+              {/* icon edit */}
+
+              {/* Saving shouldn't exist if there's no counter */}
+              {counts.length > 0 && (
+                <div className="w-fit">
+                  <svg
+                    onClick={edit}
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.5"
+                    stroke="currentColor"
+                    className="size-5 shrink-0 active:text-lime-700"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
+
+            {/* max height is statically calculated, which I hate. Basically, all top are 174px and the ones at the bottom are 158*/}
+            {counts.length > 0 && (
+              <div className="max-h-[calc(100dvh-174px-158px)] flex flex-col gap-4 overflow-scroll scrollbar-none">
+                {/* Counters */}
+                {counts.map((item, i) => (
+                  <CounterItem
+                    key={item.idx}
+                    handler={updateCount(item.idx)}
+                    idx={item.idx}
+                    count={item.count}
+                    lastItemHandler={
+                      i === counts.length - 1 ? lastItemHandler : undefined
+                    }
+                  />
+                ))}
+              </div>
+            )}
 
             <button
-              className="text-xl border-dashed border p-4 text-center active:bg-gray-100 w-full disabled:bg-gray-100 mb-4"
+              className="font-medium rounded-2xl border-dashed border py-3 px-4 text-center active:bg-green-100 w-full disabled:bg-gray-100 mb-4"
               onClick={() => addComponent()}
             >
-              {counts.length > 0 ? "Add More" : "Add Counter"}
+              Add Counter
             </button>
           </div>
 
-          <div className="absolute bottom-0 w-full h-12 bg-lime-600 flex items-center justify-center text-white text-xl">
+          <div className="fixed rounded-2xl left-1/2 -translate-x-1/2 bottom-8 w-fit py-2 font-medium px-4 bg-white/80 flex items-center justify-center text-xl">
             {totalCount}
           </div>
+
+          {/* Save button */}
+
+          {counts.length > 0 && (
+            <button
+              className="fixed bottom-8 bg-green-500 rounded-full px-2 py-2 w-[44px] aspect-square disabled:bg-green-200"
+              disabled={isSaving}
+              onClick={save}
+            >
+              <img src={saveSVG} className="w-ful" alt="Save button" />
+            </button>
+          )}
         </>
       ) : (
         "Loading"
@@ -303,11 +292,11 @@ function Counter() {
 
       {/* Pop up */}
       <div
-        className={`fixed left-1/2 bottom-16 duration-300 transition-opacity w-3/4  pointer-events-none transform -translate-x-1/2 text-center py-2 text-gray-600 ease-in-out
-          ${showPopup ? " opacity-100" : "opacity-0"}
+        className={`fixed left-1/2 bottom-8 rounded-2xl bg-gray-100 duration-300 transition-opacity w-3/5  pointer-events-none transform -translate-x-1/2 text-center py-2 text-gray-600 ease-in-out
+          ${isPopupShowing ? " opacity-100" : "opacity-0"}
           `}
       >
-        Note has been saved.
+        {popUpText}
       </div>
     </>
   );
