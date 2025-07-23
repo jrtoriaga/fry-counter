@@ -114,7 +114,7 @@ export default function EditPage() {
 
       {/* title input */}
       <div
-        className={`flex flex-col p-4 mt-6 font-semibold gap-1 bg-white/80 rounded-2xl ${
+        className={`flex flex-col p-4 mt-6 font-semibold gap-1 bg-white/40 backdrop-blud-md  rounded-2xl ${
           isDeleting && "opacity-70"
         }`}
       >
@@ -135,7 +135,7 @@ export default function EditPage() {
 
       {/* seller input */}
       <div
-        className={`flex flex-col p-4 mt-6 font-semibold gap-1 bg-white/80 rounded-2xl ${
+        className={`flex flex-col p-4 mt-6 font-semibold gap-1 bg-white/40 backdrop-blud-md  rounded-2xl ${
           isDeleting && "opacity-70"
         }`}
       >
@@ -166,7 +166,7 @@ export default function EditPage() {
 
         <div className="relative w-1/2">
           <button
-            className={`px-4 py-3 text-white bg-red-800 active:bg-red-900 w-full rounded-2xl font-medium ${
+            className={`px-4 py-3 text-white bg-red-500 active:bg-red-600 w-full rounded-2xl font-medium ${
               isDeleting && "hidden"
             }`}
             onClick={() => setDeleting(true)}
@@ -180,11 +180,11 @@ export default function EditPage() {
               isDeleting ? "block" : "hidden"
             }`}
           >
-            <span className="-top-12 absolute bg-white/80 px-3 py-2 rounded-2xl shadow">
+            <span className="-top-12 absolute bg-white/40 backdrop-blud-md  px-3 py-2 rounded-2xl shadow">
               Are you sure?
             </span>
             <button
-              className="w-1/2 h-full text-white bg-red-800 active:bg-red-900 rounded-l-2xl  font-medium rounded-bl-2xl"
+              className="w-1/2 h-full text-white bg-red-500 active:bg-red-600 rounded-l-2xl  font-medium rounded-bl-2xl"
               onClick={deleteHandler}
             >
               Yes
@@ -200,7 +200,7 @@ export default function EditPage() {
       </div>
 
       {/* Note summary */}
-      <div className="mt-8 p-4 text-gray-600 gap-2 flex flex-col bg-white/80 rounded-2xl">
+      <div className="mt-8 p-4 text-gray-600 gap-2 flex flex-col bg-white/40 backdrop-blud-md  rounded-2xl">
         <span className="font-semibold ">Note Info</span>
 
         <div className="flex">id: {note.id}</div>

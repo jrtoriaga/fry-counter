@@ -30,7 +30,7 @@ export default function CounterItem({
 
   return (
     <div className="flex items-center gap-4 max-h-[52px]">
-      <div className="rounded-full text-xl aspect-square bg-white/80 font-medium h-[48px] min-w-[48px] flex items-center justify-center">
+      <div className="rounded-full select-none text-xl aspect-square bg-white/40 backdrop-blud-md  font-medium h-[48px] min-w-[48px] flex items-center justify-center">
         {idx}
 
         {/* {lastItemHandler && (
@@ -43,7 +43,7 @@ export default function CounterItem({
         )} */}
       </div>
 
-      <div className="flex items-center w-full justify-between bg-white/80 rounded-2xl py-1 px-3">
+      <div className="flex items-center w-full justify-between bg-white/40 backdrop-blud-md  rounded-2xl py-1 px-3">
         <button
           className="rounded-full aspect-square w-[40px] text-white bg-blue-500 font-medium active:bg-blue-600"
           onClick={() => handleClick(1)}
@@ -56,7 +56,7 @@ export default function CounterItem({
 
           {lastItemHandler && (
             <button
-              className="absolute -top-2 left-4 bg-red-500 rounded-full text-xs text-white border px-1"
+              className="absolute -top-2 -right-6 bg-red-500 rounded-full text-xs text-white border px-1"
               onClick={() => lastItemHandler()}
             >
               x

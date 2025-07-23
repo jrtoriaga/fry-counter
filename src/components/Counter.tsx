@@ -215,7 +215,7 @@ function Counter() {
         <>
           <div className="flex gap-4 flex-col mt-4">
             {/* Note title */}
-            <div className="flex items-center  justify-between bg-white/80 px-4 min-h-[54px] rounded-2xl font-medium">
+            <div className="flex items-center  justify-between bg-white/40 backdrop-blud-md  px-4 min-h-[54px] rounded-2xl font-medium">
               <span className="flex-grow select-none max-w-full truncate">
                 {note.title || "Untitled Count"}
               </span>
@@ -246,7 +246,7 @@ function Counter() {
 
             {/* max height is statically calculated, which I hate. Basically, all top are 174px and the ones at the bottom are 158*/}
             {counts.length > 0 && (
-              <div className="max-h-[calc(100dvh-174px-158px)] flex flex-col gap-4 overflow-scroll scrollbar-none">
+              <div className="max-h-[calc(100dvh-154px-142px)] flex flex-col gap-4 overflow-scroll scrollbar-none">
                 {/* Counters */}
                 {counts.map((item, i) => (
                   <CounterItem
@@ -259,6 +259,7 @@ function Counter() {
                     }
                   />
                 ))}
+
               </div>
             )}
 
@@ -270,7 +271,7 @@ function Counter() {
             </button>
           </div>
 
-          <div className="fixed rounded-2xl left-1/2 -translate-x-1/2 bottom-8 w-fit py-2 font-medium px-4 bg-white/80 flex items-center justify-center text-xl">
+          <div className="fixed rounded-2xl left-1/2 -translate-x-1/2 bottom-4 w-fit py-2 font-medium px-4 bg-white/40 backdrop-blud-md  flex items-center justify-center text-xl">
             {totalCount}
           </div>
 
@@ -278,7 +279,7 @@ function Counter() {
 
           {counts.length > 0 && (
             <button
-              className="fixed bottom-8 bg-green-500 rounded-full px-2 py-2 w-[44px] aspect-square disabled:bg-green-200"
+              className="fixed bottom-4 bg-green-500 rounded-full px-2 py-2 w-[44px] aspect-square disabled:bg-green-200"
               disabled={isSaving}
               onClick={save}
             >

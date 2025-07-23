@@ -23,7 +23,7 @@ export default function AllNotes() {
         {notes &&
           notes.map((note, i) => (
             <Link to={`/counter?noteId=${note.id}`} key={note.id}>
-              <div className="p-4 text-gray-700 font-medium flex items-center gap-2 bg-white/80 rounded-xl">
+              <div className="p-4 text-gray-700 font-medium flex items-center gap-2 bg-white/40 backdrop-blud-md  rounded-xl">
                 <span>{i + 1}.</span>
                 {note.title ? note.title : 'Untitled'}
               </div>
@@ -31,7 +31,7 @@ export default function AllNotes() {
           ))}
 
         {notes.length === 0 && (
-          <div className="bg-white/80 flex items-center rounded-2xl px-4">
+          <div className="bg-white/40 backdrop-blud-md  flex items-center rounded-2xl px-4">
 
             <div className="text-xl my-12 text-gray-700">No counts found.</div>
           </div>
